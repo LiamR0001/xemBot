@@ -3,7 +3,7 @@ const fetch = require("node-fetch")
 
 module.exports = {
   name: "corona",
-  category: "info",
+  category: "Information ",
   description: "Get the stats of the latest pandemic (COVID-19)",
   usage: "corona all or jsonData <country>",
   aliases: ["covid", "covid19"],
