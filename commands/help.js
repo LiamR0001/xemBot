@@ -1,91 +1,58 @@
-const Discord = require('discord.js')
-const fs = require("fs");
-const { PREFIX } = require("../../config.js");
-const db = require('old-wio.db');
-const { stripIndents } = require("common-tags");
-const { support } = require("../../config.json");
-
+const { MessageEmbed } = require("discord.js");
 module.exports = {
-config: {
-    name: "help",
-    description: "Help Menu",
-    category: 'utility',
-    usage: "1) !help \n2) !help [module name]\n3) !help [command (name or alias)]",
-    example: "1) !help\n2) !help util\n3) !help ban",
-    aliases: ['h']
-},
-run: async (bot, message, args) => {
-    let prefix;
-    if (message.author.bot || message.channel.type === "dm") return;
-        try {
-            let fetched = await db.fetch(`prefix_${message.guild.id}`);
-            if (fetched == null) {
-                prefix = PREFIX
-            } else {
-                prefix = fetched
-            }
-        } catch (e) {
-            console.log(e)
-    };
-    
-    try {
+  name: "help",
+  description: "Get list of all command and even get to know every command detials",
+  usage: "help <cmd>",
+  category: "Information ",
+    run: async (client, message, args) => {
+      if (args[0]) {
+      const command = await client.commands.get(args[0]);
 
-    let Categories = ["admin", "fun", "images", "info", "mod", "utility"],
-    AllCommands = [];
+      if (!command) {
+        return message.reply("There is no command in the bot with name **" + args[0] + "**.");
+      }
 
-const Emotes = {
-    admin: "⚙️ Admin",
-    fun: "🙂 Fun",
-    images: "🔍 Images",
-    info: "📚 Info",
-    mod: "🔧 Mod",
-    utility: "🤖 Utility"
+      let embed = new MessageEmbed()
+        .setTitle(command.name[0].toUpperCase() + command.name.slice(1) + " Command")
+        .setDescription(command.description || "**:x: | The command has no desciption :sob:")
+        .addField("Command usage", command.usage ? "```js\n" + default_prefix + command.usage + "```" : "Not Provided")
+        .setColor("GREEN")
+
+
+      if(command.aliases && command.aliases.length) embed.addField("Aliases", command.aliases.map(x => "`" + x +"`").join(", "))
+      if(command.botPermission && command.botPermission.length) embed.addField("Bot Permissions", command.botPermission.map(x => "`" + x +"`").join(", "), true)
+      if(command.authorPermission && command.authorPermission.length) embed.addField("Author Permissions", command.authorPermission.map(x => "`" + x +"`").join(", "), true)
+
+      return message.channel.send(embed);
+    } else {
+      const commands = await client.commands;
+
+      let emx = new MessageEmbed()
+        .setDescription("Help")
+        .setColor("GREEN")
+        .setFooter(`xemBot | Requested by ${message.author.username}` client.user.displayAvatarURL())
+        .setThumbnail(client.user.displayAvatarURL());
+
+      let com = {};
+      for (let comm of commands.array()) {
+        let category = comm.category || "**:x: | The catergory is unknown of these commands.**";
+        let name = comm.name;
+
+        if (!com[category]) {
+          com[category] = [];
+        }
+        com[category].push(name);
+      }
+
+      for (const [key, value] of Object.entries(com)) {
+        let category = key;
+
+        let desc = "`" + value.join("`, `") + "`";
+
+        emx.addField(`${category.toUpperCase()}[${value.length}]`, desc);
+      }
+
+      return message.channel.send(emx);
+    }
+  }
 };
-
-for (let i = 0; i < Categories.length; i++) {
-    const Cmds = await bot.commands.filter(C => C.config.category === Categories[i]).array().map(C => C.config.name).sort((a, b) => a < b ? -1 : 1).join(", ");
-    AllCommands.push(`\n\n**${Emotes[Categories[i]]}**\n\`\`\`${Cmds}\`\`\``);
-};
-
-const Description = `My Prefix For **${message.guild.name}** Is **${prefix}**\n\nFor More Command Information, Type The Following Command:\n**${prefix}help <command Name> or** <@${bot.user.id}> **help <command name>**`;
-
-const Embed = new Discord.MessageEmbed()
-    .setColor("RANDOM")
-    .setAuthor("Commands", message.author.avatarURL({
-        dynamic: true
-    }))
-    .setDescription(Description + AllCommands.join("") + "" + "\n\n" + "**Links -**" + ` [Join Support](${support}) • [Invite Me](https://discordapp.com/oauth2/authorize?client_id=${bot.user.id}&permissions=8&scope=bot)`)
-    .setFooter(`Requested by ${message.author.username}`, bot.user.displayAvatarURL())
-    .setTimestamp();
-
-if (!args[0]) return message.channel.send(Embed);
-
-else {
-    const embed = new Discord.MessageEmbed()
-    .setColor("RANDOM")
-    .setAuthor(`${message.guild.me.displayName} Help`, message.guild.iconURL())
-    .setThumbnail(bot.user.displayAvatarURL())
-
-    let command = bot.commands.get(bot.aliases.get(args[0].toLowerCase()) || args[0].toLowerCase())
-    if (!command) return message.channel.send(embed.setTitle("**Invalid Command!**").setDescription(`**Do \`${prefix}help\` For the List Of the Commands!**`))
-    command = command.config
-
-    embed.setDescription(stripIndents`
-    ** Command -** \`${command.name.slice(0, 1).toUpperCase() + command.name.slice(1)}\`\n
-    ** Description -** \`${command.description || "No Description provided."}\`\n
-    ** Usage -** [   \`${command.usage ? `${command.usage}` : "No Usage"}\`   ]\n
-    ** Examples -** \`${command.example ? `${command.example}` : "No Examples Found"}\`\n
-    ** Aliases -** [ \`${command.aliases ? command.aliases.join(" , ") : "None."}\` ]`)
-    embed.setFooter(message.guild.name, message.guild.iconURL())
-
-    return message.channel.send(embed)
-};
-} catch (e) {
-  console.log(e);
-};
-
-    
-
-}
-
-}
