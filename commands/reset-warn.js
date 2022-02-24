@@ -4,6 +4,7 @@ module.exports = {
   name: "removewarns",
   aliases: ["rwarns"],
   usage: "rwarns <@user>",
+  catergory: "Moderation",
   description: "Reset warnings of mentioned person",
   run: async (client, message, args) => {
     
